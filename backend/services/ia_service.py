@@ -1,14 +1,13 @@
 import os
 from openai import OpenAI
 
-# Inicializamos el cliente de OpenAI (automáticamente buscará la llave en tu .env)
 client = OpenAI()
 
-def generar_respuesta_tutor(mensaje_estudiante):
-    # Cuando tengan su modelo entrenado, solo cambiarán el .env, no este código.
+# 1. Ahora recibimos la lista completa
+def generar_respuesta_tutor(historial_mensajes):
     modelo_actual = os.getenv("FINE_TUNED_MODEL_ID", "gpt-4o-mini")
     
-    # Aquí aplicamos las reglas estrictas del proyecto
+    # (AQUÍ VA TU SYSTEM PROMPT GIGANTE INTACTO)
     system_prompt = """
     Eres TutorIA, un agente de inteligencia artificial especializado en apoyar el aprendizaje
     de estudiantes universitarios de ingeniería en los cursos de Pensamiento Computacional
@@ -194,14 +193,23 @@ def generar_respuesta_tutor(mensaje_estudiante):
     al estudiante más capaz que antes de consultarte.
     """
 
+    # 2. Empezamos la lista de mensajes de OpenAI con nuestras reglas estrictas
+    mensajes_para_openai = [
+        {"role": "system", "content": system_prompt}
+    ]
+
+    # 3. Recorremos el historial que nos mandó React y lo traducimos para OpenAI
+    for msg in historial_mensajes:
+        # OpenAI llama al bot "assistant", pero en React lo llamamos "ia"
+        rol_openai = "assistant" if msg["rol"] == "ia" else "user"
+        mensajes_para_openai.append({"role": rol_openai, "content": msg["texto"]})
+
     try:
+        # 4. Le enviamos todo el paquete armado a la IA
         respuesta = client.chat.completions.create(
             model=modelo_actual,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": mensaje_estudiante}
-            ],
-            temperature=0.3 # Baja temperatura para respuestas lógicas y menos creativas/alucinadas
+            messages=mensajes_para_openai,
+            temperature=0.3 
         )
         return respuesta.choices[0].message.content
     except Exception as e:

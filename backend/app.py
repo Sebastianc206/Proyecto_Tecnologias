@@ -1,23 +1,41 @@
+# backend/app.py
 import os
 from flask import Flask
+from flask_cors import CORS
 from dotenv import load_dotenv
 
-# 1. Cargamos las contraseñas del .env ANTES de importar cualquier otra cosa
-load_dotenv()
+# 1. Importamos nuestra base de datos y los modelos que acabamos de crear
+from database import db
+import models 
 
-# 2. AHORA SÍ importamos nuestro "recepcionista", porque la llave ya está en la memoria
-from routes.ia_routes import ia_bp  
+load_dotenv()
+from routes.ia_routes import ia_bp 
+from routes.auth_routes import auth_bp 
+from routes.historial_routes import historial_bp
 
 app = Flask(__name__)
+CORS(app) 
 
-# 3. Registramos las rutas
+# 2. Le pasamos la URL de Docker a la configuración de Flask
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 3. Conectamos la aplicación de Flask con la base de datos
+db.init_app(app)
+
+# 4. CREACIÓN AUTOMÁTICA DE TABLAS
+# Esto revisa tu PostgreSQL y crea las tablas si aún no existen
+with app.app_context():
+    db.create_all()
+    print("Las tablas han sido verificadas/creadas exitosamente en PostgreSQL.")
+
 app.register_blueprint(ia_bp, url_prefix='/api/ia')
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(historial_bp, url_prefix='/api/historial')
 
-# 4. Ruta base de prueba
 @app.route('/')
 def estado_servidor():
-    modelo = os.getenv("FINE_TUNED_MODEL_ID", "No definido")
-    return {"estado": "Servidor Flask funcionando", "modelo_conectado": modelo}
+    return {"estado": "Servidor Flask y Base de Datos funcionando al 100%"}
 
 if __name__ == '__main__':
     app.run(debug=True)
