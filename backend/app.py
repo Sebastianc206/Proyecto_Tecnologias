@@ -8,13 +8,14 @@ from dotenv import load_dotenv
 from database import db
 import models 
 
-load_dotenv()
+load_dotenv(".env")
 from routes.ia_routes import ia_bp 
 from routes.auth_routes import auth_bp 
 from routes.historial_routes import historial_bp
 
 app = Flask(__name__)
-CORS(app) 
+# En backend/app.py
+CORS(app, expose_headers=["X-ID-Conversacion", "X-Texto-Transcrito", "X-Respuesta-IA"])
 
 # 2. Le pasamos la URL de Docker a la configuración de Flask
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
