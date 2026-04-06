@@ -5,83 +5,118 @@ import axios from 'axios';
 
 export default function Register() {
   const navigate = useNavigate();
-  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [exito, setExito] = useState(''); // NUEVO: Estado para el mensaje de éxito
+  const [error, setError]       = useState('');
+  const [exito, setExito]       = useState('');
 
   const manejarRegistro = async (e) => {
-    e.preventDefault(); 
-    setError(''); 
-    setExito('');
-
+    e.preventDefault();
+    setError(''); setExito('');
     try {
-      await axios.post('http://127.0.0.1:5000/api/auth/registro', {
-        username: username,
-        password: password
-      });
-
-      // NUEVO: En lugar de un alert(), mostramos un texto verde elegante
-      setExito('¡Cuenta creada con éxito! Redirigiendo al Login...');
-      
-      // Esperamos 2 segundos para que el usuario lea el mensaje y luego lo enviamos al Login
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-
+      await axios.post('http://127.0.0.1:5000/api/auth/registro', { username, password });
+      setExito('¡Cuenta creada con éxito! Redirigiendo...');
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
-      // Si el backend detecta que el usuario ya existe, aquí se captura y se muestra el error en rojo
-      if (err.response && err.response.data.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Error al conectar con el servidor.");
-      }
+      setError(err.response?.data?.error ?? 'Error al conectar con el servidor.');
     }
   };
 
+  const disabled = exito !== '';
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f9fafb', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div style={{ backgroundColor: '#ffffff', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', width: '100%', maxWidth: '400px', textAlign: 'center', boxSizing: 'border-box' }}>
-        
-        <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0' }}>Crear Cuenta</h1>
-        <p style={{ fontSize: '15px', color: '#6b7280', margin: '0 0 32px 0' }}>Únete a TutorIA y guarda tu progreso</p>
-        
-        {/* Mensaje de Error (Rojo) */}
-        {error && <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '6px', fontSize: '14px', marginBottom: '15px' }}>{error}</div>}
-        
-        {/* Mensaje de Éxito (Verde) */}
-        {exito && <div style={{ backgroundColor: '#dcfce7', color: '#15803d', padding: '10px', borderRadius: '6px', fontSize: '14px', marginBottom: '15px' }}>{exito}</div>}
+    <div style={S.page}>
+      <style>{css}</style>
+      <div className="card fade-in">
+        <div style={S.winBar}>
+          <span style={S.dot('#f7768e')} /><span style={S.dot('#e0af68')} /><span style={S.dot('#9ece6a')} />
+          <span style={S.winLabel}>tutoria — registro</span>
+        </div>
 
-        <form onSubmit={manejarRegistro} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <input 
-            type="text" 
-            placeholder="Elige un Nombre de Usuario" 
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={exito !== ''} // Bloqueamos el input si ya tuvo éxito
-            required 
-            style={{ width: '100%', padding: '14px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '15px', boxSizing: 'border-box', outline: 'none', backgroundColor: '#f9fafb' }} 
-          />
-          <input 
-            type="password" 
-            placeholder="Crea una Contraseña" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={exito !== ''} // Bloqueamos el input si ya tuvo éxito
-            required 
-            style={{ width: '100%', padding: '14px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '15px', boxSizing: 'border-box', outline: 'none', backgroundColor: '#f9fafb' }} 
-          />
-          
-          <button type="submit" disabled={exito !== ''} style={{ width: '100%', padding: '14px', backgroundColor: exito ? '#9ca3af' : '#111827', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '500', cursor: exito ? 'not-allowed' : 'pointer', marginTop: '8px' }}>
-            {exito ? 'Creando...' : 'Crear mi Cuenta'}
-          </button>
-        </form>
+        <div style={S.body}>
+          <div style={S.brandRow}>
+            <span style={S.brandIcon}>⟩_</span>
+            <div>
+              <div style={S.brandName}>TutorIA</div>
+              <div style={S.brandSub}>Asistente de Programación</div>
+            </div>
+            <span style={S.badge}><span style={S.pulseDot} />online</span>
+          </div>
 
-        <p style={{ marginTop: '24px', fontSize: '14px', color: '#6b7280' }}>
-          ¿Ya tienes cuenta? <Link to="/" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>Inicia sesión aquí</Link>
-        </p>
+          <div style={S.divider} />
+          <p style={S.sectionLabel}>Crear cuenta</p>
+
+          {error && <div style={S.alertBox('error')}>✗ &nbsp;{error}</div>}
+          {exito && <div style={S.alertBox('success')}>✓ &nbsp;{exito}</div>}
+
+          <form onSubmit={manejarRegistro} style={S.form}>
+            <div style={S.field}>
+              <label style={S.label}>Usuario</label>
+              <div className="input-wrap-r" style={S.inputWrap}>
+                <span style={S.prefix}>›</span>
+                <input type="text" placeholder="elige_un_nombre" value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={disabled} required style={S.input} className="cmd-input" />
+              </div>
+            </div>
+            <div style={S.field}>
+              <label style={S.label}>Contraseña</label>
+              <div className="input-wrap-r" style={S.inputWrap}>
+                <span style={S.prefix}>›</span>
+                <input type="password" placeholder="••••••••" value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={disabled} required style={S.input} className="cmd-input" />
+              </div>
+            </div>
+            <button type="submit" disabled={disabled} className="submit-btn-r"
+              style={{ ...S.submitBtn, backgroundColor: disabled ? '#2a2c45' : '#bb9af7', color: disabled ? '#565f89' : '#1a1b2e', cursor: disabled ? 'not-allowed' : 'pointer' }}>
+              {disabled ? 'Creando cuenta...' : 'Crear cuenta'}
+            </button>
+          </form>
+
+          <p style={S.footer}>
+            ¿Ya tienes cuenta?{' '}
+            <Link to="/" style={S.link}>Inicia sesión aquí</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
+
+const S = {
+  page: { display:'flex', justifyContent:'center', alignItems:'center', minHeight:'100vh', backgroundColor:'#1a1b2e', fontFamily:"'IBM Plex Sans', sans-serif", backgroundImage:'radial-gradient(ellipse at 80% 50%, rgba(187,154,247,0.05) 0%, transparent 60%)' },
+  winBar: { display:'flex', alignItems:'center', gap:'6px', padding:'10px 16px', backgroundColor:'#0f1020', borderBottom:'1px solid #2a2c45' },
+  winLabel: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#3b3d5c', marginLeft:'8px' },
+  dot: (c) => ({ display:'inline-block', width:'11px', height:'11px', borderRadius:'50%', backgroundColor:c }),
+  body: { padding:'30px 30px 34px' },
+  brandRow: { display:'flex', alignItems:'center', gap:'14px', marginBottom:'22px' },
+  brandIcon: { fontFamily:"'JetBrains Mono', monospace", fontSize:'22px', color:'#bb9af7', lineHeight:1 },
+  brandName: { fontFamily:"'JetBrains Mono', monospace", fontSize:'17px', fontWeight:'600', color:'#c0caf5', lineHeight:1.2 },
+  brandSub: { fontSize:'12px', color:'#565f89', marginTop:'3px' },
+  badge: { marginLeft:'auto', display:'flex', alignItems:'center', gap:'5px', fontFamily:"'JetBrains Mono', monospace", fontSize:'10px', color:'#9ece6a', backgroundColor:'rgba(158,206,106,0.08)', border:'1px solid rgba(158,206,106,0.2)', borderRadius:'3px', padding:'3px 8px' },
+  pulseDot: { width:'5px', height:'5px', borderRadius:'50%', backgroundColor:'#9ece6a', animation:'pulse-dot 2s ease-in-out infinite' },
+  divider: { height:'1px', backgroundColor:'#2a2c45', marginBottom:'22px' },
+  sectionLabel: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#565f89', marginBottom:'18px', letterSpacing:'0.05em' },
+  alertBox: (t) => ({ fontFamily:"'JetBrains Mono', monospace", fontSize:'12px', color: t==='error'?'#f7768e':'#9ece6a', backgroundColor: t==='error'?'rgba(247,118,142,0.08)':'rgba(158,206,106,0.08)', border:`1px solid ${t==='error'?'rgba(247,118,142,0.2)':'rgba(158,206,106,0.2)'}`, borderRadius:'3px', padding:'10px 14px', marginBottom:'16px' }),
+  form: { display:'flex', flexDirection:'column', gap:'14px' },
+  field: { display:'flex', flexDirection:'column', gap:'5px' },
+  label: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#565f89', letterSpacing:'0.05em' },
+  inputWrap: { display:'flex', alignItems:'center', backgroundColor:'#13141f', border:'1px solid #2a2c45', borderRadius:'4px', overflow:'hidden', transition:'border-color 0.2s' },
+  prefix: { fontFamily:"'JetBrains Mono', monospace", fontSize:'14px', color:'#3b3d5c', padding:'0 8px 0 12px', userSelect:'none' },
+  input: { flex:1, padding:'11px 12px 11px 0', backgroundColor:'transparent', border:'none', outline:'none', fontFamily:"'JetBrains Mono', monospace", fontSize:'14px', color:'#c0caf5' },
+  submitBtn: { padding:'12px', border:'none', borderRadius:'4px', fontFamily:"'JetBrains Mono', monospace", fontSize:'13px', fontWeight:'600', transition:'background-color 0.15s, transform 0.1s' },
+  footer: { marginTop:'22px', fontSize:'13px', color:'#565f89', textAlign:'center' },
+  link: { color:'#7dcfff', textDecoration:'none', borderBottom:'1px solid rgba(125,207,255,0.25)' },
+};
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap');
+  @keyframes pulse-dot { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+  @keyframes fadeSlideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .card { width:100%; max-width:420px; background:#16213e; border:1px solid #2a2c45; border-radius:6px; overflow:hidden; }
+  .fade-in { animation: fadeSlideIn 0.35s ease; }
+  .input-wrap-r:focus-within { border-color:#bb9af7 !important; box-shadow:0 0 0 2px rgba(187,154,247,0.1); }
+  .submit-btn-r:hover:not(:disabled) { filter:brightness(1.1); transform:translateY(-1px); }
+  .cmd-input::placeholder { color:#3b3d5c; }
+`;
