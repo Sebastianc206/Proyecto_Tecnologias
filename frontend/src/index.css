@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+/* ─── TOKYO NIGHT PALETTE ───────────────────────────── */
+:root {
+  --bg-base:        #1a1b2e;
+  --bg-surface:     #16213e;
+  --bg-overlay:     #0f3460;
+  --bg-input:       #1e1f3b;
+  --bg-message-ia:  #1e2035;
+  --bg-sidebar:     #13141f;
+  --bg-code:        #11121c;
+
+  --border:         #2a2c45;
+  --border-active:  #7aa2f7;
+
+  --text-primary:   #c0caf5;
+  --text-secondary: #565f89;
+  --text-muted:     #3b3d5c;
+  --text-white:     #e0e0ff;
+
+  --accent-blue:    #7aa2f7;
+  --accent-cyan:    #7dcfff;
+  --accent-green:   #9ece6a;
+  --accent-purple:  #bb9af7;
+  --accent-red:     #f7768e;
+  --accent-orange:  #ff9e64;
+  --accent-yellow:  #e0af68;
+
+  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+  --font-ui:     'IBM Plex Sans', sans-serif;
+
+  --radius-sm:  3px;
+  --radius-md:  5px;
+  --radius-lg:  8px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+/* ─── SCROLLBAR ──────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ─── CURSOR BLINK ───────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
