@@ -17,6 +17,11 @@ export default function Chat() {
   const [historialChats, setHistorialChats] = useState([]);
   const [chatActualId, setChatActualId]     = useState(null);
 
+  // --- LÓGICA DE VOZ REINSTALADA (ESTADOS Y REFS) ---
+  const [grabando, setGrabando] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [mensajes, cargando]);
@@ -42,7 +47,83 @@ export default function Chat() {
 
   const iniciarNuevoChat = () => {
     setChatActualId(null);
-    setMensajes([{ rol: 'ia', texto: `¡Hola, ${datosUsuario?.username}! Soy TutorIA. ¿En qué concepto de Pensamiento Computacional o Programación te puedo ayudar hoy?` }]);
+    setMensajes([{ rol: 'ia', texto: `¡Hola, ${datosUsuario?.username}! Soy TutorIA. ¿Prefieres escribirme o hablarme hoy?` }]);
+  };
+
+  // --- LÓGICA DE GRABACIÓN DE VOZ ---
+  const toggleGrabacion = async () => {
+    if (grabando) {
+      mediaRecorderRef.current.stop();
+      setGrabando(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        chunksRef.current = [];
+
+        mediaRecorderRef.current.ondataavailable = (e) => chunksRef.current.push(e.data);
+        mediaRecorderRef.current.onstop = enviarVozAlBackend;
+
+        mediaRecorderRef.current.start();
+        setGrabando(true);
+      } catch (err) {
+        alert("No se pudo acceder al micrófono.");
+      }
+    }
+  };
+
+  const enviarVozAlBackend = async () => {
+    const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+    formData.append('id_usuario', datosUsuario.id_usuario);
+    if (chatActualId) formData.append('id_conversacion', chatActualId);
+
+    setCargando(true);
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/ia/chat-voz', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        // 1. Extraer datos de los Headers
+        const nuevoId = response.headers.get('X-ID-Conversacion');
+        
+        // Decodificamos el texto. Usamos un fallback por si el header viene vacío
+        const textoUserRaw = response.headers.get('X-Texto-Transcrito') || "";
+        const textoIARaw = response.headers.get('X-Respuesta-IA') || "";
+
+        // Para manejar caracteres especiales de forma segura:
+        const textoUser = decodeURIComponent(escape(textoUserRaw));
+        const textoIA = decodeURIComponent(escape(textoIARaw));
+
+        // 2. Actualizar la interfaz de usuario
+        if (nuevoId && nuevoId !== "null") setChatActualId(nuevoId);
+        
+        setMensajes(prev => [
+          ...prev, 
+          { rol: 'user', texto: textoUser || "Audio enviado" }, 
+          { rol: 'ia', texto: textoIA || "Aquí tienes mi respuesta..." }
+        ]);
+        
+        if (!chatActualId) {
+          cargarPanelLateral();
+        }
+
+        // 3. Reproducir el audio de respuesta
+        const audioBlobRes = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlobRes);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      }
+    } catch (error) {
+      console.error("Error en chat de voz:", error);
+      setMensajes(prev => [...prev, { rol: 'ia', texto: "Error al procesar el audio." }]);
+    } finally {
+      setCargando(false);
+    }
   };
 
   const manejarEnvio = async (e) => {
@@ -167,7 +248,7 @@ export default function Chat() {
           )}
         </div>
 
-        {/* Input */}
+        {/* Input Area */}
         <div style={S.inputArea}>
           <form onSubmit={manejarEnvio} style={S.inputForm}>
             <div className="input-bar" style={S.inputBar}>
@@ -177,6 +258,18 @@ export default function Chat() {
                 value={textoInput}
                 onChange={(e) => setTextoInput(e.target.value)}
                 disabled={cargando} style={S.inputField} />
+              
+              {/* --- BOTÓN DE VOZ AGREGADO --- */}
+              <button 
+                type="button" 
+                onClick={toggleGrabacion}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '0 15px',
+                  fontSize: '20px', color: grabando ? '#f7768e' : '#7aa2f7'
+                }}>
+                {grabando ? '🛑' : '🎤'}
+              </button>
+
               <button type="submit" disabled={cargando} className="send-btn" style={S.sendBtn(cargando)}>
                 {cargando ? '...' : 'Enviar ↵'}
               </button>
@@ -229,7 +322,6 @@ const S = {
   msgRow: (rol) => ({
     display:'flex', justifyContent:'center',
     padding:'16px 24px',
-    /* IA: fondo ligeramente distinto + borde izq de acento */
     backgroundColor: rol==='ia' ? '#161728' : 'transparent',
     borderLeft: rol==='ia' ? '3px solid #7aa2f7' : '3px solid transparent',
     animation:'fadeSlideIn 0.22s ease',
@@ -239,13 +331,11 @@ const S = {
   /* AI avatar: cuadrado azul */
   iaAvatar: { flexShrink:0, width:'30px', height:'30px', borderRadius:'4px', backgroundColor:'rgba(122,162,247,0.15)', border:'1px solid rgba(122,162,247,0.35)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', fontWeight:'600', color:'#7aa2f7', marginTop:'2px' },
   iaLabel: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#7aa2f7', marginBottom:'6px', display:'block', letterSpacing:'0.04em' },
-  /* IA text: más claro, mayor line-height */
   iaText: { fontSize:'15px', lineHeight:'1.8', color:'#c0caf5', fontFamily:"'IBM Plex Sans', sans-serif" },
 
   /* User avatar: cuadrado púrpura */
   userAvatar: { flexShrink:0, width:'30px', height:'30px', borderRadius:'4px', backgroundColor:'rgba(187,154,247,0.12)', border:'1px solid rgba(187,154,247,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono', monospace", fontSize:'13px', fontWeight:'600', color:'#bb9af7', marginTop:'2px' },
   userLabel: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#bb9af7', marginBottom:'6px', display:'block', letterSpacing:'0.04em' },
-  /* User text: ligeramente más tenue */
   userText: { fontSize:'15px', lineHeight:'1.75', color:'#a9b1d6', fontFamily:"'IBM Plex Sans', sans-serif" },
 
   msgContent: { flex:1, minWidth:0 },
@@ -271,9 +361,9 @@ const css = `
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2a2c45;border-radius:2px}
 
   .new-chat-btn:hover { background-color:rgba(122,162,247,0.08) !important; border-color:#7aa2f7 !important; }
-  .chat-item:hover    { background-color:#1e2035 !important; color:#c0caf5 !important; }
-  .exit-btn:hover     { background-color:rgba(247,118,142,0.1) !important; }
-  .menu-btn:hover     { color:#c0caf5 !important; background:rgba(255,255,255,0.04); }
+  .chat-item:hover     { background-color:#1e2035 !important; color:#c0caf5 !important; }
+  .exit-btn:hover      { background-color:rgba(247,118,142,0.1) !important; }
+  .menu-btn:hover      { color:#c0caf5 !important; background:rgba(255,255,255,0.04); }
   .send-btn:hover:not(:disabled) { background-color:#89b4fa !important; }
   .input-bar:focus-within { border-color:#7aa2f7 !important; box-shadow:0 0 0 2px rgba(122,162,247,0.08); }
   .chat-input::placeholder { color:#3b3d5c; }

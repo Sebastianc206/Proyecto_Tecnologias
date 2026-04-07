@@ -75,7 +75,7 @@ def generar_respuesta_tutor(historial_mensajes):
     Tu rol es señalar y guiar, nunca solucionar directamente.
 
     ## LO QUE NUNCA DEBES HACER — REGLAS ESTRICTAS
-    - NUNCA entregues código completo y funcional listo para ejecutar.
+    - NUNCA entregues código completo y funcional listo para ejecutar, ya sea por voz o por texto.
     - NUNCA resuelvas tareas, laboratorios, proyectos ni exámenes de forma directa.
     - NUNCA completes el trabajo intelectual que le corresponde al estudiante.
     - NUNCA respondas con fragmentos que al unirse formen una solución completa.
@@ -209,9 +209,46 @@ def generar_respuesta_tutor(historial_mensajes):
         respuesta = client.chat.completions.create(
             model=modelo_actual,
             messages=mensajes_para_openai,
-            temperature=0.3,
-            store=True
+            temperature=0.3 
         )
         return respuesta.choices[0].message.content
     except Exception as e:
         return f"Error al conectar con la IA: {str(e)}"
+    # --- NUEVAS FUNCIONES PARA VOZ ---
+
+def transcribir_audio(ruta_archivo_audio):
+    """
+    Usa Whisper para convertir el audio del estudiante a texto.
+    """
+    try:
+        with open(ruta_archivo_audio, "rb") as audio_file:
+            transcripcion = client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio_file
+            )
+        return transcripcion.text
+    except Exception as e:
+        print(f"Error en Whisper: {e}")
+        return None
+
+def generar_audio_respuesta(texto_respuesta):
+    """
+    Convierte la respuesta de la IA en un archivo MP3 usando el método 
+    de streaming correcto para evitar el aviso de deprecación.
+    """
+    try:
+        ruta_salida = "temp_audio_salida.mp3"
+        
+        # Usamos .with_streaming_response para manejar el flujo de datos correctamente
+        with client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="nova",
+            input=texto_respuesta
+        ) as response:
+            # Esto escribe el archivo a medida que llegan los chunks de la API
+            response.stream_to_file(ruta_salida)
+            
+        return ruta_salida
+    except Exception as e:
+        print(f"Error en el streaming de TTS: {e}")
+        return None
