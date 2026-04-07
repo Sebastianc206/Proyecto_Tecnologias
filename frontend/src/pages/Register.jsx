@@ -7,6 +7,8 @@ export default function Register() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [sexo, setSexo] = useState('');
   const [error, setError]       = useState('');
   const [exito, setExito]       = useState('');
 
@@ -14,7 +16,12 @@ export default function Register() {
     e.preventDefault();
     setError(''); setExito('');
     try {
-      await axios.post('http://127.0.0.1:5000/api/auth/registro', { username, password });
+      await axios.post('http://127.0.0.1:5000/api/auth/registro', { 
+        username, 
+        password,
+        fecha_nacimiento: fechaNacimiento || null,
+        sexo: sexo || null
+      });
       setExito('¡Cuenta creada con éxito! Redirigiendo...');
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
@@ -68,6 +75,30 @@ export default function Register() {
                   disabled={disabled} required style={S.input} className="cmd-input" />
               </div>
             </div>
+            
+            <div style={S.field}>
+              <label style={S.label}>Fecha de Nacimiento</label>
+              <div className="input-wrap-r" style={S.inputWrap}>
+                <span style={S.prefix}>›</span>
+                <input type="date" value={fechaNacimiento}
+                  onChange={(e) => setFechaNacimiento(e.target.value)}
+                  disabled={disabled} style={S.input} className="cmd-input" />
+              </div>
+            </div>
+
+            <div style={S.field}>
+              <label style={S.label}>Sexo</label>
+              <div className="input-wrap-r" style={S.inputWrap}>
+                <span style={S.prefix}>›</span>
+                <select value={sexo} onChange={(e) => setSexo(e.target.value)} disabled={disabled} style={{...S.input, backgroundColor: 'transparent', outline: 'none', border: 'none', color: '#c0caf5'}}>
+                  <option value="" style={{color: '#000'}}>Seleccionar...</option>
+                  <option value="Masculino" style={{color: '#000'}}>Masculino</option>
+                  <option value="Femenino" style={{color: '#000'}}>Femenino</option>
+                  <option value="Otro" style={{color: '#000'}}>Otro</option>
+                </select>
+              </div>
+            </div>
+
             <button type="submit" disabled={disabled} className="submit-btn-r"
               style={{ ...S.submitBtn, backgroundColor: disabled ? '#2a2c45' : '#bb9af7', color: disabled ? '#565f89' : '#1a1b2e', cursor: disabled ? 'not-allowed' : 'pointer' }}>
               {disabled ? 'Creando cuenta...' : 'Crear cuenta'}
@@ -119,4 +150,5 @@ const css = `
   .input-wrap-r:focus-within { border-color:#bb9af7 !important; box-shadow:0 0 0 2px rgba(187,154,247,0.1); }
   .submit-btn-r:hover:not(:disabled) { filter:brightness(1.1); transform:translateY(-1px); }
   .cmd-input::placeholder { color:#3b3d5c; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 `;

@@ -16,7 +16,13 @@ export default function Login() {
     setLoading(true);
     try {
       const respuesta = await axios.post('http://127.0.0.1:5000/api/auth/login', { username, password });
-      localStorage.setItem('usuarioTutorIA', JSON.stringify(respuesta.data.usuario));
+      
+      // Guardamos usuario e id de bitácora (sin rol)
+      localStorage.setItem('usuarioTutorIA', JSON.stringify({
+        ...respuesta.data.usuario,
+        id_bitacora: respuesta.data.id_bitacora
+      }));
+      
       navigate('/chat');
     } catch (err) {
       setError(err.response?.data?.error ?? 'Error al conectar con el servidor.');

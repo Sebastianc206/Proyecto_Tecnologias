@@ -17,7 +17,7 @@ export default function Chat() {
   const [historialChats, setHistorialChats] = useState([]);
   const [chatActualId, setChatActualId]     = useState(null);
 
-  // --- LÓGICA DE VOZ REINSTALADA (ESTADOS Y REFS) ---
+  // --- LÓGICA DE VOZ (ESTADOS Y REFS) ---
   const [grabando, setGrabando] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -88,18 +88,13 @@ export default function Chat() {
       });
 
       if (response.ok) {
-        // 1. Extraer datos de los Headers
         const nuevoId = response.headers.get('X-ID-Conversacion');
-        
-        // Decodificamos el texto. Usamos un fallback por si el header viene vacío
         const textoUserRaw = response.headers.get('X-Texto-Transcrito') || "";
         const textoIARaw = response.headers.get('X-Respuesta-IA') || "";
 
-        // Para manejar caracteres especiales de forma segura:
         const textoUser = decodeURIComponent(escape(textoUserRaw));
         const textoIA = decodeURIComponent(escape(textoIARaw));
 
-        // 2. Actualizar la interfaz de usuario
         if (nuevoId && nuevoId !== "null") setChatActualId(nuevoId);
         
         setMensajes(prev => [
@@ -112,7 +107,6 @@ export default function Chat() {
           cargarPanelLateral();
         }
 
-        // 3. Reproducir el audio de respuesta
         const audioBlobRes = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlobRes);
         const audio = new Audio(audioUrl);
@@ -146,7 +140,20 @@ export default function Chat() {
     } finally { setCargando(false); }
   };
 
-  const cerrarSesion = () => { localStorage.removeItem('usuarioTutorIA'); navigate('/'); };
+  // --- LÓGICA DE CIERRE DE SESIÓN CON BITÁCORA ---
+  const cerrarSesion = async () => { 
+    if (datosUsuario && datosUsuario.id_bitacora) {
+      try {
+        await axios.post('http://127.0.0.1:5000/api/auth/logout', {
+          id_bitacora: datosUsuario.id_bitacora
+        });
+      } catch (error) {
+        console.error("Error al registrar salida en bitácora", error);
+      }
+    }
+    localStorage.removeItem('usuarioTutorIA'); 
+    navigate('/'); 
+  };
 
   if (!datosUsuario) return null;
 
@@ -210,7 +217,6 @@ export default function Chat() {
         <div style={S.feed} ref={feedRef}>
           {mensajes.map((msg, i) => (
             <div key={i} style={S.msgRow(msg.rol)} className="msg-row">
-              {/* IA message */}
               {msg.rol === 'ia' && (
                 <div style={S.msgInner}>
                   <div style={S.iaAvatar}>AI</div>
@@ -220,7 +226,6 @@ export default function Chat() {
                   </div>
                 </div>
               )}
-              {/* User message */}
               {msg.rol === 'user' && (
                 <div style={S.msgInner}>
                   <div style={S.userAvatar}>{datosUsuario.username.charAt(0).toUpperCase()}</div>
@@ -259,7 +264,6 @@ export default function Chat() {
                 onChange={(e) => setTextoInput(e.target.value)}
                 disabled={cargando} style={S.inputField} />
               
-              {/* --- BOTÓN DE VOZ AGREGADO --- */}
               <button 
                 type="button" 
                 onClick={toggleGrabacion}
@@ -284,8 +288,6 @@ export default function Chat() {
 /* ── STYLES ─────────────────────────────────────── */
 const S = {
   shell: { display:'flex', height:'100vh', backgroundColor:'#1a1b2e', fontFamily:"'IBM Plex Sans', sans-serif", color:'#c0caf5', overflow:'hidden' },
-
-  /* sidebar */
   sidebar: (o) => ({ width:o?'260px':'0px', minWidth:o?'260px':'0px', transition:'width 0.28s ease, min-width 0.28s ease', overflow:'hidden', backgroundColor:'#0f1020', borderRight:'1px solid #2a2c45', display:'flex', flexDirection:'column', whiteSpace:'nowrap' }),
   sidebarTop: { padding:'20px 16px 14px', borderBottom:'1px solid #2a2c45', display:'flex', flexDirection:'column', gap:'14px' },
   appBrand: { display:'flex', alignItems:'center', gap:'10px' },
@@ -304,8 +306,6 @@ const S = {
   userChip: { fontFamily:"'JetBrains Mono', monospace", fontSize:'12px', color:'#c0caf5', display:'flex', alignItems:'center', gap:'5px' },
   userAt: { color:'#9ece6a' },
   exitBtn: { background:'none', border:'1px solid rgba(247,118,142,0.2)', borderRadius:'3px', color:'#f7768e', cursor:'pointer', fontFamily:"'JetBrains Mono', monospace", fontSize:'10px', padding:'4px 9px', transition:'background-color 0.15s' },
-
-  /* topbar */
   main: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth:0 },
   topbar: { display:'flex', alignItems:'center', padding:'12px 20px', borderBottom:'1px solid #2a2c45', backgroundColor:'#13141f', flexShrink:0, gap:'14px' },
   menuBtn: { background:'none', border:'none', color:'#565f89', cursor:'pointer', fontSize:'16px', padding:'4px 6px', borderRadius:'3px', lineHeight:1, transition:'color 0.15s', flexShrink:0 },
@@ -314,11 +314,7 @@ const S = {
   topbarSep: { color:'#2a2c45', fontSize:'16px' },
   topbarSub: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#3b3d5c', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' },
   readyPill: { marginLeft:'auto', fontFamily:"'JetBrains Mono', monospace", fontSize:'10px', color:'#9ece6a', backgroundColor:'rgba(158,206,106,0.08)', border:'1px solid rgba(158,206,106,0.15)', borderRadius:'3px', padding:'3px 8px', flexShrink:0 },
-
-  /* messages feed */
   feed: { flex:1, overflowY:'auto', display:'flex', flexDirection:'column', padding:'8px 0' },
-
-  /* Rows diferenciados visualmente */
   msgRow: (rol) => ({
     display:'flex', justifyContent:'center',
     padding:'16px 24px',
@@ -327,24 +323,15 @@ const S = {
     animation:'fadeSlideIn 0.22s ease',
   }),
   msgInner: { width:'100%', maxWidth:'800px', display:'flex', gap:'14px', alignItems:'flex-start' },
-
-  /* AI avatar: cuadrado azul */
   iaAvatar: { flexShrink:0, width:'30px', height:'30px', borderRadius:'4px', backgroundColor:'rgba(122,162,247,0.15)', border:'1px solid rgba(122,162,247,0.35)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', fontWeight:'600', color:'#7aa2f7', marginTop:'2px' },
   iaLabel: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#7aa2f7', marginBottom:'6px', display:'block', letterSpacing:'0.04em' },
   iaText: { fontSize:'15px', lineHeight:'1.8', color:'#c0caf5', fontFamily:"'IBM Plex Sans', sans-serif" },
-
-  /* User avatar: cuadrado púrpura */
   userAvatar: { flexShrink:0, width:'30px', height:'30px', borderRadius:'4px', backgroundColor:'rgba(187,154,247,0.12)', border:'1px solid rgba(187,154,247,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'JetBrains Mono', monospace", fontSize:'13px', fontWeight:'600', color:'#bb9af7', marginTop:'2px' },
   userLabel: { fontFamily:"'JetBrains Mono', monospace", fontSize:'11px', color:'#bb9af7', marginBottom:'6px', display:'block', letterSpacing:'0.04em' },
   userText: { fontSize:'15px', lineHeight:'1.75', color:'#a9b1d6', fontFamily:"'IBM Plex Sans', sans-serif" },
-
   msgContent: { flex:1, minWidth:0 },
-
-  /* loading */
   loadingDots: { display:'flex', gap:'5px', alignItems:'center', marginTop:'4px', height:'20px' },
   ldDot: (i) => ({ width:'7px', height:'7px', borderRadius:'50%', backgroundColor:'#7aa2f7', animation:`pulse-dot 1.2s ease-in-out ${i*0.2}s infinite` }),
-
-  /* input */
   inputArea: { padding:'14px 24px 18px', backgroundColor:'#13141f', borderTop:'1px solid #2a2c45', display:'flex', justifyContent:'center', flexShrink:0 },
   inputForm: { width:'100%', maxWidth:'800px' },
   inputBar: { display:'flex', alignItems:'center', backgroundColor:'#1e1f3b', border:'1px solid #2a2c45', borderRadius:'5px', overflow:'hidden', transition:'border-color 0.2s' },
