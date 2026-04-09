@@ -16,7 +16,7 @@ export default function Register() {
     e.preventDefault();
     setError(''); setExito('');
     try {
-      await axios.post('https://proyecto-tecnologias-mzs8.vercel.app/', { 
+      await axios.post('https://proyecto-tecnologias-mzs8.vercel.app/api/auth/registro', { 
         username, 
         password,
         fecha_nacimiento: fechaNacimiento || null,
