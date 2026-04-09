@@ -15,7 +15,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const respuesta = await axios.post('http://127.0.0.1:5000/api/auth/login', { username, password });
+      const respuesta = await axios.post('https://proyecto-tecnologias-mzs8.vercel.app/api/auth/login', { username, password });
       
       // Guardamos usuario e id de bitácora (sin rol)
       localStorage.setItem('usuarioTutorIA', JSON.stringify({

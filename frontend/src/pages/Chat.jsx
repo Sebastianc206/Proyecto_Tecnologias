@@ -35,7 +35,7 @@ export default function Chat() {
     const registrarSalida = () => {
       if (datosUsuario && datosUsuario.id_bitacora) {
         // 1. Avisamos al backend que cierre la sesión en la base de datos
-        fetch('http://127.0.0.1:5000/api/auth/logout', {
+        fetch('https://proyecto-tecnologias-mzs8.vercel.app/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -60,14 +60,14 @@ export default function Chat() {
 
   const cargarPanelLateral = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/historial/usuario/${datosUsuario.id_usuario}`);
+      const res = await axios.get(`https://proyecto-tecnologias-mzs8.vercel.app/api/historial/usuario/${datosUsuario.id_usuario}`);
       setHistorialChats(res.data);
     } catch (err) { console.error('Error al cargar historial lateral:', err); }
   };
 
   const cargarChatEspecifico = async (id_conversacion) => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/historial/conversacion/${id_conversacion}`);
+      const res = await axios.get(`https://proyecto-tecnologias-mzs8.vercel.app/api/historial/conversacion/${id_conversacion}`);
       setMensajes(res.data);
       setChatActualId(id_conversacion);
     } catch (err) { console.error('Error al cargar mensajes:', err); }
@@ -110,7 +110,7 @@ export default function Chat() {
     setCargando(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/ia/chat-voz', {
+      const response = await fetch('https://proyecto-tecnologias-mzs8.vercel.app/api/ia/chat-voz', {
         method: 'POST',
         body: formData,
       });
@@ -156,7 +156,7 @@ export default function Chat() {
     setTextoInput('');
     setCargando(true);
     try {
-      const res = await axios.post('http://127.0.0.1:5000/api/ia/chat', {
+      const res = await axios.post('https://proyecto-tecnologias-mzs8.vercel.app/api/ia/chat', {
         id_usuario: datosUsuario.id_usuario,
         id_conversacion: chatActualId,
         mensaje: nuevoMensajeUsuario.texto,
@@ -172,7 +172,7 @@ export default function Chat() {
   const cerrarSesion = async () => { 
     if (datosUsuario && datosUsuario.id_bitacora) {
       try {
-        await axios.post('http://127.0.0.1:5000/api/auth/logout', {
+        await axios.post('https://proyecto-tecnologias-mzs8.vercel.app/api/auth/logout', {
           id_bitacora: datosUsuario.id_bitacora
         });
       } catch (error) {
